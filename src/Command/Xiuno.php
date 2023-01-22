@@ -261,7 +261,7 @@ HTML
                 $topic = Topic::create([
                     'title' => $data['subject'],
                     'post_id' => 0,
-                    'user_id' => XiunoMigrate::query()->where(['table' => 'user', '_id' => $data['uid']])->first()->sf_id ?: User::query()->first()->id,
+                    'user_id' => @XiunoMigrate::query()->where(['table' => 'user', '_id' => $data['uid']])->first()->sf_id ?: User::query()->first()->id,
                     'status' => 'publish',
                     'view' => $data['views'],
                     'tag_id' => XiunoMigrate::query()->where(['table' => 'forum', '_id' => $data['fid']])->first()->sf_id ?: TopicTag::query()->first()->id,
@@ -292,8 +292,8 @@ HTML
                     // 创建评论
                     $_comment = TopicComment::create([
                         'post_id' => 0,
-                        'topic_id' => XiunoMigrate::query()->where(['table' => 'thread', '_id' => $comment['tid']])->first()->sf_id,
-                        'user_id' => XiunoMigrate::query()->where(['table' => 'user', '_id' => $comment['uid']])->first()->sf_id ?: User::query()->first()->id,
+                        'topic_id' => @XiunoMigrate::query()->where(['table' => 'thread', '_id' => $comment['tid']])->first()->sf_id?:0,
+                        'user_id' => @XiunoMigrate::query()->where(['table' => 'user', '_id' => $comment['uid']])->first()->sf_id ?: User::query()->first()->id,
                         'status' => 'publish',
                         'created_at' => date('Y-m-d H:i:s', (int) $comment['create_date']),
                         'updated_at' => date('Y-m-d H:i:s', (int) $comment['create_date']),
@@ -307,9 +307,9 @@ HTML
                     // 创建回复
                     $_comment = TopicComment::create([
                         'post_id' => 0,
-                        'parent_id' => XiunoMigrate::query()->where(['table' => 'comment', '_id' => $comment['quotepid']])->first()->sf_id ?: null,
-                        'topic_id' => XiunoMigrate::query()->where(['table' => 'thread', '_id' => $comment['tid']])->first()->sf_id,
-                        'user_id' => XiunoMigrate::query()->where(['table' => 'user', '_id' => $comment['uid']])->first()->sf_id ?: User::query()->first()->id,
+                        'parent_id' => @XiunoMigrate::query()->where(['table' => 'comment', '_id' => $comment['quotepid']])->first()->sf_id ?: null,
+                        'topic_id' => @XiunoMigrate::query()->where(['table' => 'thread', '_id' => $comment['tid']])->first()->sf_id?:0,
+                        'user_id' => @XiunoMigrate::query()->where(['table' => 'user', '_id' => $comment['uid']])->first()->sf_id ?: User::query()->first()->id,
                         'status' => 'publish',
                         'created_at' => date('Y-m-d H:i:s', (int) $comment['create_date']),
                         'updated_at' => date('Y-m-d H:i:s', (int) $comment['create_date']),
@@ -333,7 +333,7 @@ HTML
         // 帖子
         foreach (XiunoMigrate::query()->where('table', 'thread')->get() as $item) {
             //sf帖子id
-            $topic_id = $item->sf_id;
+            @$topic_id = $item->sf_id?:0;
             // xiuno tid
             $tid = $item->_id;
             // 判断是否需要更新数据
@@ -345,7 +345,7 @@ HTML
                 // xiuno pid
                 $xiuno_pid = $xiuno_topic['firstpid'];
                 // sf post_id
-                $sf_post_id = XiunoMigrate::query()->where(['table' => 'post', '_id' => $xiuno_pid])->first()->sf_id;
+                @$sf_post_id = XiunoMigrate::query()->where(['table' => 'post', '_id' => $xiuno_pid])->first()->sf_id?:0;
                 // 更新数据
                 Db::table('topic')->where('id', $topic_id)->update([
                     'post_id' => $sf_post_id,
@@ -359,13 +359,13 @@ HTML
         // 评论
         foreach (XiunoMigrate::query()->where('table', 'comment')->get() as $item) {
             //sf评论id
-            $comment_id = $item->sf_id;
+            @$comment_id = $item->sf_id?:0;
             // xiuno pid
             $pid = $item->_id;
             // 判断是否需要更新数据
             if (TopicComment::query()->where(['id' => $comment_id, 'post_id' => '0'])->exists()) {
                 // xiuno 评论信息
-                $sf_post_id = XiunoMigrate::query()->where(['table' => 'post', '_id' => $pid])->first()->sf_id;
+                @$sf_post_id = XiunoMigrate::query()->where(['table' => 'post', '_id' => $pid])->first()->sf_id?:0;
                 // 更新数据
                 Db::table('topic_comment')->where('id', $comment_id)->update([
                     'post_id' => $sf_post_id,
@@ -391,8 +391,8 @@ HTML
             if (! XiunoMigrate::query()->where(['table' => 'attach', '_id' => $file['aid']])->exists()) {
                 $path = public_path('upload/attach/' . $file['filename']);
                 $url = ('/upload/attach/' . $file['filename']);
-                $user_id = XiunoMigrate::query()->where(['table' => 'user', '_id' => $file['uid']])->first()->sf_id ?: User::query()->first()->id;
-                $post_id = XiunoMigrate::query()->where(['table' => 'post', '_id' => $file['pid']])->first()->sf_id ?: null;
+                @$user_id = XiunoMigrate::query()->where(['table' => 'user', '_id' => $file['uid']])->first()->sf_id ?: User::query()->first()->id;
+                @$post_id = XiunoMigrate::query()->where(['table' => 'post', '_id' => $file['pid']])->first()->sf_id ?: null;
                 $uf = UserUpload::query()->create([
                     'user_id' => $user_id,
                     'post_id' => $post_id,
